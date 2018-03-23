@@ -16,6 +16,8 @@ const App = () => (
         <Route exact path="/" component={LinkList} />
         <Route exact path="/create" component={CreateLink} />
         <Route exact path="/search" component={Search} />
+        <Route exact path="/top" component={LinkList} />
+        <Route exact path="/new/:page" component={LinkList} />
       </Switch>
     </div>
   </div>

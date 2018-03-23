@@ -3,10 +3,11 @@ import { graphql } from 'react-apollo';
 import gql from 'graphql-tag';
 
 import Link from './Link';
+import { LINKS_PER_PAGE } from '../constants';
 
 export const FEED_QUERY = gql`
-  query FeedQuery {
-    feed {
+  query FeedQuery($first: Int, $skip: Int, $orderBy: LinkOrderByInput) {
+    feed(first: $first, skip: $skip, orderBy: $orderBy) {
       id
       url
       description
@@ -27,10 +28,15 @@ export const FEED_QUERY = gql`
 
 class LinkList extends React.Component {
   _updateCacheAfterVote = (store, createVote, linkId) => {
-    const data = store.readQuery({ query: FEED_QUERY });
-    const votedLink = data.feed.find(link => link.id === linkId);
-    votedLink.votes.push(createVote);
+    const isNewPage = this.props.location.pathname.includes('new');
+    const page = parseInt(this.props.match.params.page, 10);
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+    const first = isNewPage ? LINKS_PER_PAGE : 100;
+    const orderBy = isNewPage ? 'createdAt_DESC' : null;
+    const data = store.readQuery({ query: FEED_QUERY, variables: { first, skip, orderBy } });
 
+    const votedLink = data.feed.links.find(link => link.id === linkId);
+    votedLink.votes = createVote.link.votes;
     store.writeQuery({ query: FEED_QUERY, data });
   };
 
@@ -104,6 +110,31 @@ class LinkList extends React.Component {
     });
   };
 
+  _nextPage = () => {
+    const page = parseInt(this.props.match.params.page, 10);
+    if (page <= this.props.feedQuery.feed.count / LINKS_PER_PAGE) {
+      const nextPage = page + 1;
+      this.props.history.push(`/new/${nextPage}`);
+    }
+  };
+
+  _previousPage = () => {
+    const page = parseInt(this.props.match.params.page, 10);
+    if (page > 1) {
+      const previousPage = page - 1;
+      this.props.history.push(`/new/${previousPage}`);
+    }
+  };
+
+  _getLinksToRender = (isNewPage) => {
+    if (isNewPage) {
+      return this.props.feedQuery.feed.links;
+    }
+    const rankedLinks = this.props.feedQuery.feed.links.slice();
+    rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length);
+    return rankedLinks;
+  };
+
   componentDidMount() {
     this._subscribeToNewLinks();
     this._subscribeToNewVotes();
@@ -119,7 +150,9 @@ class LinkList extends React.Component {
       return <div>Error</div>;
     }
 
-    const linksToRender = feedQuery.feed;
+    const isNewPage = this.props.location.pathname.includes('new');
+    const linksToRender = this._getLinksToRender(isNewPage);
+    const page = parseInt(this.props.match.params.page, 10);
 
     return (
       <div>
@@ -136,4 +169,16 @@ class LinkList extends React.Component {
   }
 }
 
-export default graphql(FEED_QUERY, { name: 'feedQuery' })(LinkList);
+export default graphql(FEED_QUERY, {
+  name: 'feedQuery',
+  options: (ownProps) => {
+    const page = parseInt(ownProps.match.params.page, 10);
+    const isNewPage = ownProps.location.pathname.includes('new');
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+    const first = isNewPage ? LINKS_PER_PAGE : 100;
+    const orderBy = isNewPage ? 'createdAt_DESC' : null;
+    return {
+      variables: { first, skip, orderBy },
+    };
+  },
+})(LinkList);
