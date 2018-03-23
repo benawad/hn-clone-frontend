@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { ApolloProvider } from 'react-apollo';
-import { ApolloClient, HttpLink, InMemoryCache, ApolloLink } from 'apollo-client-preset';
+import { split, ApolloClient, HttpLink, InMemoryCache, ApolloLink } from 'apollo-client-preset';
 import { BrowserRouter } from 'react-router-dom';
+import { WebSocketLink } from 'apollo-link-ws';
+import { getMainDefinition } from 'apollo-utilities';
 
 import { AUTH_TOKEN } from './constants';
 import App from './components/App';
@@ -22,8 +24,27 @@ const middlewareAuthLink = new ApolloLink((operation, forward) => {
 
 const httpLink = new HttpLink({ uri: 'http://localhost:4000' });
 
+const wsLink = new WebSocketLink({
+  uri: 'ws://localhost:4000',
+  options: {
+    reconnect: true,
+    connectionParams: {
+      authToken: localStorage.getItem(AUTH_TOKEN),
+    },
+  },
+});
+
+const link = split(
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query);
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  middlewareAuthLink.concat(httpLink),
+);
+
 const client = new ApolloClient({
-  link: middlewareAuthLink.concat(httpLink),
+  link,
   cache: new InMemoryCache(),
 });
 

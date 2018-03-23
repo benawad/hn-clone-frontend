@@ -34,6 +34,81 @@ class LinkList extends React.Component {
     store.writeQuery({ query: FEED_QUERY, data });
   };
 
+  _subscribeToNewVotes = () => {
+    this.props.feedQuery.subscribeToMore({
+      document: gql`
+        subscription {
+          newVote {
+            node {
+              id
+              link {
+                id
+                url
+                description
+                createdAt
+                postedBy {
+                  id
+                  name
+                }
+                votes {
+                  id
+                  user {
+                    id
+                  }
+                }
+              }
+              user {
+                id
+              }
+            }
+          }
+        }
+      `,
+    });
+  };
+
+  _subscribeToNewLinks = () => {
+    this.props.feedQuery.subscribeToMore({
+      document: gql`
+        subscription {
+          newLink {
+            node {
+              id
+              url
+              description
+              createdAt
+              postedBy {
+                id
+                name
+              }
+              votes {
+                id
+                user {
+                  id
+                }
+              }
+            }
+          }
+        }
+      `,
+      updateQuery: (previous, { subscriptionData }) => {
+        const newAllLinks = [subscriptionData.data.newLink.node, ...previous.feed.links];
+        const result = {
+          ...previous,
+          feed: {
+            links: newAllLinks,
+          },
+        };
+        return result;
+      },
+    });
+  };
+
+  componentDidMount() {
+    this._subscribeToNewLinks();
+    this._subscribeToNewVotes();
+  }
+
   render() {
     const { feedQuery } = this.props;
     if (feedQuery && feedQuery.loading) {
