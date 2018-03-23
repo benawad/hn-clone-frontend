@@ -12,6 +12,28 @@ class Link extends Component {
       variables: {
         linkId,
       },
+      optimisticResponse: {
+        __typename: 'Mutation',
+        vote: {
+          __typename: 'Vote',
+          id: -1,
+          link: {
+            __typename: 'Link',
+            votes: {
+              __typename: 'Vote',
+              id: -1,
+              user: {
+                __typename: 'User',
+                id: -1,
+              },
+            },
+          },
+          user: {
+            __typename: 'User',
+            id: -1,
+          },
+        },
+      },
       update: (store, { data: { vote } }) => {
         this.props.updateStoreAfterVote(store, vote, linkId);
       },

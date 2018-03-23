@@ -29,7 +29,7 @@ class LinkList extends React.Component {
   _updateCacheAfterVote = (store, createVote, linkId) => {
     const data = store.readQuery({ query: FEED_QUERY });
     const votedLink = data.feed.find(link => link.id === linkId);
-    votedLink.votes = createVote.link.votes;
+    votedLink.votes.push(createVote);
 
     store.writeQuery({ query: FEED_QUERY, data });
   };
