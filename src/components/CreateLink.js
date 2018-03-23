@@ -16,6 +16,7 @@ class CreateLink extends Component {
         url,
       },
     });
+    this.props.history.push('/');
   };
 
   _onChange = (e) => {
@@ -44,6 +45,7 @@ class CreateLink extends Component {
             placeholder="The URL for the link"
           />
         </div>
+
         <button onClick={this._createLink}>Submit</button>
       </div>
     );
