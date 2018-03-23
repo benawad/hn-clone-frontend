@@ -28,15 +28,16 @@ export const FEED_QUERY = gql`
 
 class LinkList extends React.Component {
   _updateCacheAfterVote = (store, createVote, linkId) => {
-    const isNewPage = this.props.location.pathname.includes('new');
-    const page = parseInt(this.props.match.params.page, 10);
-    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
-    const first = isNewPage ? LINKS_PER_PAGE : 100;
-    const orderBy = isNewPage ? 'createdAt_DESC' : null;
-    const data = store.readQuery({ query: FEED_QUERY, variables: { first, skip, orderBy } });
+    // const isNewPage = this.props.location.pathname.includes('new');
+    // const page = parseInt(this.props.match.params.page, 10);
+    // const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+    // const first = isNewPage ? LINKS_PER_PAGE : 100;
+    // const orderBy = isNewPage ? 'createdAt_DESC' : null;
+    // const data = store.readQuery({ query: FEED_QUERY, variables: { first, skip, orderBy } });
+    const data = store.readQuery({ query: FEED_QUERY, variables: this.props.feedQuery.variables });
 
-    const votedLink = data.feed.links.find(link => link.id === linkId);
-    votedLink.votes = createVote.link.votes;
+    const votedLink = data.feed.find(link => link.id === linkId);
+    votedLink.votes.push(createVote);
     store.writeQuery({ query: FEED_QUERY, data });
   };
 
@@ -112,7 +113,7 @@ class LinkList extends React.Component {
 
   _nextPage = () => {
     const page = parseInt(this.props.match.params.page, 10);
-    if (page <= this.props.feedQuery.feed.count / LINKS_PER_PAGE) {
+    if (this.props.feedQuery.feed.length / LINKS_PER_PAGE >= 1) {
       const nextPage = page + 1;
       this.props.history.push(`/new/${nextPage}`);
     }
@@ -128,9 +129,9 @@ class LinkList extends React.Component {
 
   _getLinksToRender = (isNewPage) => {
     if (isNewPage) {
-      return this.props.feedQuery.feed.links;
+      return this.props.feedQuery.feed;
     }
-    const rankedLinks = this.props.feedQuery.feed.links.slice();
+    const rankedLinks = this.props.feedQuery.feed.slice();
     rankedLinks.sort((l1, l2) => l2.votes.length - l1.votes.length);
     return rankedLinks;
   };
@@ -152,7 +153,7 @@ class LinkList extends React.Component {
 
     const isNewPage = this.props.location.pathname.includes('new');
     const linksToRender = this._getLinksToRender(isNewPage);
-    const page = parseInt(this.props.match.params.page, 10);
+    // const page = parseInt(this.props.match.params.page, 10);
 
     return (
       <div>
@@ -164,6 +165,16 @@ class LinkList extends React.Component {
             index={i}
           />
         ))}
+        {isNewPage && (
+          <div className="flex ml4 mv3 gray">
+            <div className="pointer mr2" onClick={this._previousPage}>
+              Previous
+            </div>
+            <div className="pointer" onClick={this._nextPage}>
+              Next
+            </div>
+          </div>
+        )}
       </div>
     );
   }
