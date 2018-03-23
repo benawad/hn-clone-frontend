@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { graphql } from 'react-apollo';
 import gql from 'graphql-tag';
 
 import Link from './Link';
 
-class LinkList extends Component.PureComponent {
+class LinkList extends React.PureComponent {
   render() {
     const { feedQuery } = this.props;
     if (feedQuery && feedQuery.loading) {
@@ -15,7 +15,7 @@ class LinkList extends Component.PureComponent {
       return <div>Error</div>;
     }
 
-    const { links: linksToRender } = feedQuery.feed;
+    const linksToRender = feedQuery.feed;
 
     return <div>{linksToRender.map(link => <Link key={link.id} link={link} />)}</div>;
   }
@@ -24,12 +24,9 @@ class LinkList extends Component.PureComponent {
 const FEED_QUERY = gql`
   query FeedQuery {
     feed {
-      links {
-        id
-        createdAt
-        url
-        description
-      }
+      id
+      url
+      description
     }
   }
 `;
